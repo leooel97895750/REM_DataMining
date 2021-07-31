@@ -14,22 +14,25 @@ c3 = eeg.data(3,:); % f3f4
 e1 = eeg.data(4,:); % 眼動
 e2 = eeg.data(5,:); % 眼動
 
+
 % sampling rate
-fs = 256;
+fs = 200;
 slen = length(e1);
 et = [1:slen]/fs;
 st = [1:length(stage)];
 
+% 約略計算sampling rate
+per30 = length(e1) / length(stage);
+afs = per30 / 30;
+
 % 整體眼動與階段圖
 figure(1);
 subplot(3,1,1), plot(et, e1);
-xlim([1 30]);
 title('channel4 眼動');
 subplot(3,1,2), plot(et, e2);
-xlim([1 30]);
 title('channel5 眼動');
 subplot(3,1,3), plot(st, stage);
-xlim([1 30]);
+axis tight;
 title('stage');
 
 % 取出rem 的區段, 紀錄於陣列
@@ -80,7 +83,7 @@ for i = 1:length(event.event_name)
     end
 end
 disp(['rem fragmentation: ', num2str(total_rem_arousal)]);
-disp(['rem fragmentation ratio: ', num2str(total_rem_arousal/total_rem_second)]);
+disp(['rem fragmentation ratio: ', num2str(total_rem_arousal/totalRemDuration)]);
 
 % 取出片段計算 rem density
 final_rem_second = 0;
@@ -99,7 +102,7 @@ for i = 1:length(remIndex)/2
     % 相減平方法 取出反向特徵
     seg_rev = e1_seg - e2_seg;
     seg_rev = abs(seg_rev);
-    seg_rev = seg_rev .* 0.5;
+    seg_rev = seg_rev .* 0.25;
     
     % 後相減前項 抓出眼動陡峭程度
     e1_seg_f = filter(b, 1, e1_seg);
@@ -112,6 +115,7 @@ for i = 1:length(remIndex)/2
     seg_diff = [seg_diff, seg_diff(end)];
     % 眼動震幅主要在0.5以內，因此反向眼動相減最大越為1，sampling rate為256的情況下，將前項減後項的值*256會符合反向眼動特徵
     seg_diff = seg_diff .* fs;
+    seg_diff = seg_diff .* 2;
     
     % 模糊化 根據fs來做moving average 此例為26點平均
     seg_diff = filter(b, 1, seg_diff);
@@ -124,9 +128,9 @@ for i = 1:length(remIndex)/2
     isHead = 0;
     for j = 1:length(seg_sum)
         % 找高於threshold的第一個值
-        threshold1 = 0.025;
+        threshold1 = 0.02;
         threshold2 = 1;
-        if seg_sum(j) > threshold1 && seg_sum(j) < threshold2 && isHead == 0
+        if seg_sum(j) > threshold1 && isHead == 0
             second_block_index(end+1) = j;
             isHead = 1;
         % 找範圍內是否還有後續
@@ -139,7 +143,7 @@ for i = 1:length(remIndex)/2
             else
                 block_max = max(seg_sum(j:length(seg_sum)));
             end
-            if block_max < threshold1 && seg_sum(j) < threshold2
+            if block_max < threshold1
                 second_block_index(end+1) = j;
                 isHead = 0;
             end
@@ -155,7 +159,7 @@ for i = 1:length(remIndex)/2
     plot(t_seg, seg_diff-0.5, 'c');hold on;
     plot(t_seg, seg_rev-0.5, 'm');hold on;
     plot(t_seg, seg_sum-0.5, 'r');hold on;
-    xlim([t_seg(1) t_seg(30*256)]);
+    xlim([t_seg(1) t_seg(30*fs)]);
     
     figure(fnumber+1);
     plot(t_seg, c1(idx1:idx2)+1.2, 'k');hold on;
