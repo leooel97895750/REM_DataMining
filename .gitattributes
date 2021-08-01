@@ -1,2 +1,3 @@
 # Auto detect text files and perform LF normalization
-* text=matlab
+* text=auto
+ *.* linguist-language=MATLAB
