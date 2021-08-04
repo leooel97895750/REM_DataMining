@@ -14,16 +14,23 @@ c3 = eeg.data(3,:); % f3f4
 e1 = eeg.data(4,:); % 眼動
 e2 = eeg.data(5,:); % 眼動
 
-
-% sampling rate
-fs = 256;
-slen = length(e1);
-et = [1:slen]/fs;
-st = [1:length(stage)];
-
 % 約略計算sampling rate
 per30 = length(e1) / length(stage);
 afs = per30 / 30;
+% sampling rate
+fs = round(afs);
+slen = length(e1);
+et = [1:slen]/fs;
+st = [1:length(stage)];
+if(afs < 250)
+    c1 = c1 ./ 1000;
+    c2 = c2 ./ 1000;
+    c3 = c3 ./ 1000;
+    e1 = e1 ./ 1000;
+    e2 = e2 ./ 1000;
+end
+
+
 
 % 整體眼動與階段圖
 figure(1);
@@ -69,9 +76,19 @@ for i = 1:length(remIndex)/2
     totalRemDuration = totalRemDuration + (idx2 - idx1);
 end
 avgRemDuration = totalRemDuration / remNumber;
+
+% 計算rem latency
+rem_lat = 0;
+for j = 1:length(stage)
+    if(stage(j) == -1)
+        rem_lat = j*30;
+        break;
+    end
+end
 disp(['rem總次數: ', num2str(remNumber)]);
 disp(['rem總時間: ', num2str(totalRemDuration)]);
 disp(['平均rem時間: ', num2str(round(avgRemDuration))]);
+disp(['rem latency: ', num2str(rem_lat)]);
 
 % 計算rem fragmentation
 total_rem_arousal = 0;

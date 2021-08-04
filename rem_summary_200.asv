@@ -9,14 +9,18 @@ event = load([path, 'event.mat']);
 
 % 取出訊號資料
 c1 = eeg.data(1,:); % c3c4
+c1 = c1 ./ 1000;
 c2 = eeg.data(2,:); % o1o2
+c2 = c2 ./ 1000;
 c3 = eeg.data(3,:); % f3f4
+c3 = c3 ./ 1000;
 e1 = eeg.data(4,:); % 眼動
+e1 = e1 ./ 1000;
 e2 = eeg.data(5,:); % 眼動
-
+e2 = e2 ./ 1000;
 
 % sampling rate
-fs = 256;
+fs = 200;
 slen = length(e1);
 et = [1:slen]/fs;
 st = [1:length(stage)];
@@ -69,9 +73,19 @@ for i = 1:length(remIndex)/2
     totalRemDuration = totalRemDuration + (idx2 - idx1);
 end
 avgRemDuration = totalRemDuration / remNumber;
+
+% 計算rem latency
+rem_lat = 0;
+for j = 1:length(stage)
+    if(stage(j) == -1)
+        rem_lat = j*30;
+        break;
+    end
+end
 disp(['rem總次數: ', num2str(remNumber)]);
 disp(['rem總時間: ', num2str(totalRemDuration)]);
 disp(['平均rem時間: ', num2str(round(avgRemDuration))]);
+disp(['rem latency', num2str(rem_lat)]);
 
 % 計算rem fragmentation
 total_rem_arousal = 0;
